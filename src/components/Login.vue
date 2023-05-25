@@ -18,12 +18,8 @@
       </div>
       <div class="login-form__submit">
         <div style="display: flex; flex-direction: column;">
-          <button class="login-form__button" type="submit">Login using Email</button>
-          <div class="login-form__or" style="text-align: center;">or</div>
-          <button class="login-form__button login-form__button--google" type="button" @click.prevent="signInWithGoogle">
-            <i class="fab fa-google"></i> Sign in with Google
-          </button>
-        </div>
+          <button class="login-form__button" type="submit">Login</button>
+      </div>
       </div>
     </form>
     <div class="login-form__register-link">
@@ -37,7 +33,7 @@
 <script setup>
   import { ref } from 'vue'
   import { auth } from '../Firebase/index.js'
-  import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup} from '@firebase/auth'
+  import { signInWithEmailAndPassword} from '@firebase/auth'
   import router from '../router/index.js'
 
   const email = ref('')
@@ -50,8 +46,15 @@
   const loginUser = () => {
     if (email.value && password.value) {
       signInWithEmailAndPassword(auth, email.value, password.value)
-        .then(() => {
-          router.push('/home')
+        .then((cred) => {
+          if (cred.user.emailVerified) {
+            router.push('/posts')
+          } else {
+            error.value = true
+            errorMsg.value = "Your account is not yet verified."
+            email.value = ''
+            password.value = ''
+          }
         })
         .catch((err) => {
           error.value = true
@@ -61,18 +64,6 @@
       error.value = true
       errorMsg.value = 'Please fill out both email and password fields.'
     }
-  }
-  const signInWithGoogle = () => {
-    const provider = new GoogleAuthProvider()
-    provider.setCustomParameters({ prompt: 'select_account' })
-    signInWithPopup(auth, provider)
-        .then((cred) => {
-            router.push('/home')
-        })
-        .catch((err) => {
-            error.value = true
-            errorMsg.value = err.message
-        })
   }
 </script>
 

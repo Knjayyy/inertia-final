@@ -13,21 +13,13 @@
           <input type="text" id="fullname" class="input" v-model="fullname">
         </div>
         <div class="input_fields">
-          <label for="address" class="label">Address:</label>
-          <input type="text" id="address" class="input" v-model="address">
-        </div>
-        <div class="input_fields">
-          <label for="gender" class="label">Gender:</label>
-          <select id="gender" class="input" v-model="gender">
-            <option value="" disabled>Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
-        </div>
-        <div class="input_fields">
-          <label for="contactnum" class="label">Contact Number:</label>
-          <input type="number" id="contactnum" class="input" v-model="contactnum">
-        </div>
+        <label for="gender" class="label">Gender:</label>
+        <select id="gender" class="input" v-model="gender">
+          <option value="" disabled>Select Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+      </div>
         <div class="input_fields">
           <label for="email" class="label">Email:</label>
           <input type="email" id="email" class="input" v-model="email">
@@ -47,58 +39,51 @@
     </div>
   </template>
 
-
 <script setup>
-  import { ref } from 'vue'
-  import { db } from '../Firebase/index.js'
-  import { collection, addDoc } from 'firebase/firestore'
-  import { auth } from '../Firebase/index.js'
-  import { createUserWithEmailAndPassword } from 'firebase/auth'
+  import { ref } from 'vue';
+  import { db } from '../Firebase/index.js';
+  import { collection, addDoc } from 'firebase/firestore';
+  import { auth } from '../Firebase/index.js';
+  import { createUserWithEmailAndPassword } from 'firebase/auth';
 
-  const fullname = ref('')
-  const address = ref('')
-  const gender = ref('')
-  const contactnum = ref('')
-  const email = ref('')
-  const password = ref('')
-  const error = ref('')
-  const errorMsg = ref('')
-  const success = ref('')
-  const successMsg = ref('')
+  const fullname = ref('');
+  const gender = ref('');
+  const email = ref('');
+  const password = ref('');
+  const error = ref(false);
+  const errorMsg = ref('');
+  const successMsg = ref('');
 
-  const registerUser = async() => {
-  if (fullname.value != ''|| email.value != '' || password.value !='' || gender.value !='' || contact_num !=''){
-    createUserWithEmailAndPassword(auth, email.value, password.value)
-      .then(async (cred) => {
-        console.log('user created', cred.user)
-        await addDoc(collection(db,"firebasemid"),{
-          fullname:fullname.value,
-          email:email.value,
-          address:address.value,
-          gender:gender.value,
-          contactnum:contactnum.value,
-          uid: cred.user.uid // add the UID property to the document
-        })
-        fullname.value = ''
-        email.value = ''
-        password.value = ''
-        gender.value = ''
-        contactnum.value = ''
-        address.value = ''
-        error.value = false
-        success.value = true
-        successMsg.value = "Registered Successfully"
-      })
-      .catch((err) => {
-        error.value = true
-        errorMsg.value = err.message
-      })
-  } else {
-    error.value = true
-    errorMsg.value = "Please fill out all the fields"
-  }
-}
+  const registerUser = async () => {
+    if (fullname.value !== '' && email.value !== '' && password.value !== '' && gender.value !== '') {
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email.value, password.value);
+        
+        const authorData = {
+          fullname: fullname.value,
+          gender: gender.value,
+          email: email.value,
+          uid: cred.user.uid
+        };
+
+        fullname.value = '';
+        email.value = '';
+        password.value = '';
+        gender.value = '';
+        successMsg.value = 'Account created successfully.';
+
+        await addDoc(collection(db, 'authors'), authorData);
+      } catch (err) {
+        error.value = true;
+        errorMsg.value = err.message;
+      }
+    } else {
+      error.value = true;
+      errorMsg.value = 'Please fill out all the fields';
+    }
+  };
 </script>
+
 
 
 <style scoped>

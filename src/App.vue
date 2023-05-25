@@ -1,51 +1,80 @@
-<script setup>
-  import { onAuthStateChanged, signOut } from '@firebase/auth';
-  import { ref, onMounted } from 'vue'
-  import { RouterLink, RouterView} from 'vue-router'
-  import { auth } from './Firebase/index.js'
-  import router from './router'
-
-  const isSignedIn = ref(false)
-
-  onMounted(() => {
-    onAuthStateChanged(auth, function (user) {
-      if (user) {
-        isSignedIn.value = true
-        router.push('/dashboard')
-      } else {
-        router.push('/login')
-      }
-    })
-  })
-
-  const logout = () => {
-    signOut(auth)
-      .then(() => {
-        isSignedIn.value = false
-      })
-  }
-
-</script>
 <template>
   <header>
     <nav class="nav-container">
-      <div class="nav-left">
-      </div>
+      <div class="nav-left"></div>
       <div class="nav-right">
         <ul v-show="!isSignedIn">
-          <li><router-link to="/" class="nav-link">Home</router-link></li>
           <li><router-link to="/login" class="nav-link">Login</router-link></li>
+          <li><router-link to="/register" class="nav-link">Register</router-link></li>
         </ul>
         <ul v-show="isSignedIn">
-          <li><router-link to="/home" class="nav-link">Home</router-link></li>
-          <li><router-link to="/dashboard" class="nav-link">Dashboard</router-link></li>
-          <li><a href="/login" class="nav-link" @click="logout">Logout</a></li>
+          <li><router-link to="/posts" class="nav-link">Posts</router-link></li>
+          <li><router-link to="/" class="nav-link">Authors</router-link></li>
+          <li class="nav-item dropdown" v-show="isSignedIn" @click="toggleUserMenu">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              {{ fullname ? fullname : 'User' }}
+            </a>
+            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="user-menu-button" ref="userDropdown">
+              <router-link to="/create" class="dropdown-item">Create Post</router-link>
+              <router-link to="/authPost" class="dropdown-item">My Posts</router-link>
+              <a href="#" @click="logOut" class="dropdown-item">Sign out</a>
+            </div>
+          </li>
         </ul>
       </div>
     </nav>
   </header>
   <router-view />
 </template>
+
+<script setup>
+import { onAuthStateChanged, signOut } from '@firebase/auth';
+import { ref, onMounted, watch } from 'vue';
+import { RouterLink, RouterView } from 'vue-router';
+import { auth, db } from './Firebase/index.js';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import router from './router';
+
+const isSignedIn = ref(false);
+const fullname = ref('');
+const gender = ref('');
+const email = ref('');
+const userDropdown = ref(null); 
+onMounted(() => {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      isSignedIn.value = true;
+      router.push('/');
+
+      const q = query(collection(db, 'authors'), where('uid', '==', user.uid));
+
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        fullname.value = doc.data().fullname;
+        gender.value = doc.data().gender;
+        email.value = doc.data().email;
+      });
+    } else {
+      router.push('/login');
+    }
+  });
+});
+
+const toggleUserMenu = () => {
+  userDropdown.value.classList.toggle('hidden');
+};
+
+const logOut = () => {
+  signOut(auth).then(() => {
+    isSignedIn.value = false;
+  });
+};
+</script>
+
+
+
+
+
 
 <style scoped>
   header {
